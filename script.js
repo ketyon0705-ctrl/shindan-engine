@@ -1,0 +1,185 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    const app = document.getElementById('app');
+    let config = {};
+    let currentQuestionIndex = 0;
+    let scores = {};
+
+    // Load Config
+    try {
+        const response = await fetch('config.json');
+        config = await response.json();
+        applyTheme(config.meta);
+        renderStartScreen();
+    } catch (e) {
+        app.innerHTML = '<div class="card"><p>エラーが発生しました。設定ファイルを読み込めません。</p></div>';
+        console.error(e);
+    }
+
+    function applyTheme(meta) {
+        const root = document.documentElement;
+        if (meta.themeColor) root.style.setProperty('--primary-color', meta.themeColor);
+        if (meta.themeGradient) {
+            document.body.style.backgroundImage = meta.themeGradient;
+        }
+        document.title = meta.title;
+    }
+
+    function renderStartScreen() {
+        app.innerHTML = `
+            <div class="card">
+                <h1>${config.meta.title}</h1>
+                <p>${config.meta.description}</p>
+                <button class="btn" onclick="startDiagnostic()">診断をはじめる</button>
+            </div>
+        `;
+        window.startDiagnostic = () => {
+            currentQuestionIndex = 0;
+            scores = {};
+            renderQuestion();
+        };
+    }
+
+    function renderQuestion() {
+        if (currentQuestionIndex >= config.questions.length) {
+            showCalculating();
+            return;
+        }
+
+        const q = config.questions[currentQuestionIndex];
+        const progress = ((currentQuestionIndex + 1) / config.questions.length) * 100;
+
+        app.innerHTML = `
+            <div class="card">
+                <div class="progress-container">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#999; margin-bottom:4px;">
+                        <span>Question ${currentQuestionIndex + 1}</span>
+                        <span>${config.questions.length}</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+                <h2>${q.text}</h2>
+                <div class="options-container">
+                    ${q.options.map((opt, idx) => `
+                        <button class="option-btn" onclick="handleAnswer(${idx})">${opt.label}</button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        window.handleAnswer = (optIndex) => {
+            const selectedOpt = config.questions[currentQuestionIndex].options[optIndex];
+            for (const [key, val] of Object.entries(selectedOpt.score)) {
+                scores[key] = (scores[key] || 0) + val;
+            }
+            currentQuestionIndex++;
+            renderQuestion();
+        };
+    }
+
+    function showCalculating() {
+        app.innerHTML = `
+            <div class="card" style="padding: 60px 40px;">
+                <div class="loading-spinner">診断中...</div>
+                <p style="margin-top: 20px;">あなたのタイプを分析しています<br>※精密診断モード</p>
+            </div>
+        `;
+        setTimeout(calculateResult, 2000);
+    }
+
+    function calculateResult() {
+        let maxScore = -1;
+        let resultKey = Object.keys(config.results)[0];
+
+        for (const [key, val] of Object.entries(scores)) {
+            if (val > maxScore) {
+                maxScore = val;
+                resultKey = key;
+            }
+        }
+
+        localStorage.setItem('last_diagnostic_result', resultKey);
+        renderResult(resultKey);
+    }
+
+    function renderResult(key) {
+        const r = config.results[key];
+        const isBought = localStorage.getItem('is_premium_' + config.meta.title) === 'true';
+
+        // Construct Detail HTML
+        const detailsHtml = r.details.map(d => `
+            <div class="detail-section">
+                <div class="detail-heading">${d.heading}</div>
+                <p style="margin-bottom:0;">${d.content}</p>
+            </div>
+        `).join('');
+
+        // Psychological Hook Line (Injected for high conversion)
+        const hookHtml = isBought ? '' : `
+            <div style="font-weight:bold; color:#be123c; margin-bottom:16px; line-height:1.6; padding:0 8px;">
+                あなたの本質は分かりました。<br>しかし、<span style="background:rgba(255,255,0,0.3);">実は10年に1度の転機がすぐそこに迫っています。</span><br>
+                その具体的な日付と、絶対に避けるべき行動は……
+            </div>
+        `;
+
+        app.innerHTML = `
+            <div class="card">
+                <div style="margin-bottom:12px;"><span style="background:#eee; padding:4px 12px; border-radius:12px; font-size:0.8rem;">診断結果</span></div>
+                <h1>${r.title}</h1>
+                <img src="${r.image}" class="result-image" alt="${r.title}">
+                <p class="result-short">${r.short_desc}</p>
+                
+                <!-- Teaser Hook -->
+                <div class="result-teaser">
+                    <span class="teaser-heading">⚡ あなたの隠された才能</span>
+                    <p class="teaser-text">${r.teaser}</p>
+                </div>
+
+                <!-- Premium Container -->
+                <div id="premiumContainer" class="premium-blur-container ${isBought ? '' : 'locked'}">
+                    <div class="detail-content">
+                        ${hookHtml}
+                        ${detailsHtml}
+                    </div>
+                    
+                    <!-- Floating Premium Gate (Visible only when locked) -->
+                    <div class="unlock-overlay">
+                        <div class="premium-gate-card">
+                            <div class="premium-gate-title">
+                                <span>🔒</span> この先は、あなた専用の特別鑑定書です
+                            </div>
+                            <p class="premium-gate-desc">
+                                本質的な性格、具体的な開運アクション、運命の相性など<br>
+                                約<strong>3,000文字</strong>の精密レポートを開示します。
+                            </p>
+                            <button class="btn shimmer-btn" onclick="unlockPremium()">
+                                詳細をさらに深く知る (¥${config.meta.price})
+                            </button>
+                            <p style="font-size:0.75rem; color:#999; margin-top:8px; margin-bottom:0;">※デモ決済 (請求なし)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                ${isBought ? '<div style="margin-top:20px; font-size:0.8rem; color:#aaa;">PURCHASED</div>' : ''}
+                <button class="btn btn-secondary" onclick="location.reload()">診断をやり直す</button>
+            </div>
+        `;
+
+        window.unlockPremium = () => {
+            if (confirm('【デモ】150円で決済しますか？\n（Stripe等の決済画面へ遷移します）')) {
+                localStorage.setItem('is_premium_' + config.meta.title, 'true');
+                const container = document.getElementById('premiumContainer');
+                container.classList.remove('locked');
+                const overlay = container.querySelector('.unlock-overlay');
+                if (overlay) overlay.style.display = 'none';
+
+                // Remove the hook text if it feels redundant after unlock? 
+                // Actually keeping it is fine as part of the flow, but usually user wants the real content.
+                // Re-rendering is safest but we are doing class toggle.
+                // Let's reload to clean view? No, instant gratification is better.
+                // The hook text stays, that's fine.
+            }
+        };
+    }
+});
