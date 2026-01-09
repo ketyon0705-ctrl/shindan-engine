@@ -14,16 +14,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load Themes
     try {
-        const response = await fetch('themes.json');
-        const themes = await response.json();
+        const response = await fetch('themes.json?ver=' + new Date().getTime());
+        const data = await response.json();
 
-        if (!themes[currentThemeId]) {
-            // Fallback if theme not found
-            console.warn(`Theme "${currentThemeId}" not found, falling back to onsen.`);
-            currentThemeId = 'onsen';
+        console.log("Loaded IDs:", Object.keys(data));
+
+        if (!data[currentThemeId]) {
+            console.error(`ID: ${currentThemeId} は存在しません。利用可能なIDリスト: ${Object.keys(data).join(', ')}`);
+            // Fallback
+            if (data['onsen']) {
+                console.warn(`Theme "${currentThemeId}" not found, falling back to onsen.`);
+                currentThemeId = 'onsen';
+            } else {
+                throw new Error("Theme not found and default 'onsen' is missing.");
+            }
         }
 
-        config = themes[currentThemeId];
+        config = data[currentThemeId];
 
         // check paid parameter
         if (urlParams.get('paid') === 'true') {
