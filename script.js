@@ -8,6 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('config.json');
         config = await response.json();
+
+        // check paid parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('paid') === 'true') {
+            localStorage.setItem('is_premium_' + config.meta.title, 'true');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         applyTheme(config.meta);
         renderStartScreen();
     } catch (e) {
@@ -167,19 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
 
         window.unlockPremium = () => {
-            if (confirm('【デモ】150円で決済しますか？\n（Stripe等の決済画面へ遷移します）')) {
-                localStorage.setItem('is_premium_' + config.meta.title, 'true');
-                const container = document.getElementById('premiumContainer');
-                container.classList.remove('locked');
-                const overlay = container.querySelector('.unlock-overlay');
-                if (overlay) overlay.style.display = 'none';
-
-                // Remove the hook text if it feels redundant after unlock? 
-                // Actually keeping it is fine as part of the flow, but usually user wants the real content.
-                // Re-rendering is safest but we are doing class toggle.
-                // Let's reload to clean view? No, instant gratification is better.
-                // The hook text stays, that's fine.
-            }
+            window.location.href = config.meta.stripeUrl;
         };
     }
 });

@@ -4,7 +4,8 @@
     "description": "数えきれないほどの温泉がある青森県。あなたの性格や好みから、運命の温泉郷を導き出します。",
     "price": 150,
     "themeColor": "#2dd4bf",
-    "themeGradient": "linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%)"
+    "themeGradient": "linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%)",
+    "stripeUrl": "https://buy.stripe.com/5kQ5kDcp27Y38MV9Xx8EM02"
   },
   "questions": [
     {
