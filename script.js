@@ -164,7 +164,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <button class="btn shimmer-btn" onclick="unlockPremium()">
                                 詳細をさらに深く知る (¥${config.meta.price})
                             </button>
-                            <p style="font-size:0.75rem; color:#999; margin-top:8px; margin-bottom:0;">※デモ決済 (請求なし)</p>
                         </div>
                     </div>
                 </div>
