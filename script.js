@@ -1,25 +1,48 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const app = document.getElementById('app');
     let config = {};
+    let currentThemeId = 'onsen'; // Default theme
     let currentQuestionIndex = 0;
     let scores = {};
 
-    // Load Config
+    // URL parameter parsing
+    const urlParams = new URLSearchParams(window.location.search);
+    const themeParam = urlParams.get('t');
+    if (themeParam) {
+        currentThemeId = themeParam;
+    }
+
+    // Load Themes
     try {
-        const response = await fetch('config.json');
-        config = await response.json();
+        const response = await fetch('themes.json');
+        const themes = await response.json();
+
+        if (!themes[currentThemeId]) {
+            // Fallback if theme not found
+            console.warn(`Theme "${currentThemeId}" not found, falling back to onsen.`);
+            currentThemeId = 'onsen';
+        }
+
+        config = themes[currentThemeId];
 
         // check paid parameter
-        const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('paid') === 'true') {
-            localStorage.setItem('is_premium_' + config.meta.title, 'true');
-            window.history.replaceState({}, document.title, window.location.pathname);
+            // Save premium status for THIS specific theme
+            localStorage.setItem('is_premium_' + currentThemeId, 'true');
+            // Remove params for clean URL but keep the theme param if needed? 
+            // Actually, usually we want to keep the theme param so they don't get lost on refresh.
+            // But if we use replaceState with clear params, we might lose ?t=...
+            // So we should construct the new URL carefully.
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('paid');
+            // Update URL without reloading
+            window.history.replaceState({}, document.title, newUrl.toString());
         }
 
         applyTheme(config.meta);
         renderStartScreen();
     } catch (e) {
-        app.innerHTML = '<div class="card"><p>エラーが発生しました。設定ファイルを読み込めません。</p></div>';
+        app.innerHTML = '<div class="card"><p>エラーが発生しました。テーマデータを読み込めません。</p><p>' + e + '</p></div>';
         console.error(e);
     }
 
@@ -107,13 +130,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        localStorage.setItem('last_diagnostic_result', resultKey);
+        // localStorage key should also be unique per theme?
+        // Actually the result is transient, but let's keep it safe.
+        localStorage.setItem('last_diagnostic_result_' + currentThemeId, resultKey);
         renderResult(resultKey);
     }
 
     function renderResult(key) {
         const r = config.results[key];
-        const isBought = localStorage.getItem('is_premium_' + config.meta.title) === 'true';
+        // Check premium status using the theme ID
+        const isBought = localStorage.getItem('is_premium_' + currentThemeId) === 'true';
 
         // Construct Detail HTML
         const detailsHtml = r.details.map(d => `

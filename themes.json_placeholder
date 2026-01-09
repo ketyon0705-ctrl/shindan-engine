@@ -1,0 +1,26 @@
+{
+  "onsen": {
+    "meta": {
+      "title": "あなたの温泉タイプ診断（青森版）",
+      "description": "数えきれないほどの温泉がある青森県。あなたの性格や好みから、運命の温泉郷を導き出します。",
+      "price": 150,
+      "themeColor": "#2dd4bf",
+      "themeGradient": "linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%)",
+      "stripeUrl": "https://buy.stripe.com/5kQ5kDcp27Y38MV9Xx8EM02"
+    },
+    "questions": [],
+    "results": {}
+  },
+  "future": {
+    "meta": {
+      "title": "10年後の自分診断（Future Self）",
+      "description": "今のあなたの決断が、未来をどう変えるのか。AIが10年後のあなたの姿と、待ち受ける運命をシミュレーションします。",
+      "price": 150,
+      "themeColor": "#6366f1",
+      "themeGradient": "linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%)",
+      "stripeUrl": "https://buy.stripe.com/5kQ5kDcp27Y38MV9Xx8EM02"
+    },
+    "questions": [],
+    "results": {}
+  }
+}
